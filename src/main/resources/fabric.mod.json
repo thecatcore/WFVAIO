@@ -1,0 +1,30 @@
+{
+	"schemaVersion": 1,
+	"id": "wfvaio",
+	"version": "${version}",
+	"name": "Which Fabric Variant Am I On?",
+	"description": "A small library that can detect which set of intermediary or which Fabric flavor/variant the game is running on.",
+	"authors": [
+		"Cat Core"
+	],
+	"contact": {
+		"homepage": "https://github.com/thecatcore/WFVAIO",
+		"sources": "https://github.com/thecatcore/WFVAIO"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/wfvaio/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"fr.catcore.wfvaio.WhichFabricVariantAmIOn"
+		]
+	},
+	"mixins": [
+	],
+	"depends": {
+		"fabricloader": ">=0.14.0"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
