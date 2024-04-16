@@ -17,6 +17,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
@@ -25,10 +27,11 @@ public class WhichFabricVariantAmIOn implements ModInitializer {
 	private static final Version MC_VERSION = FabricLoader.getInstance().getModContainer("minecraft")
 			.get().getMetadata().getVersion();
 	private static FabricVariants VARIANT = null;
-	private static URL mappingsUrl;
+	private static final Map<String, Object> attributes = new HashMap<>();
 	private static final String MAPPINGS_PATH = "mappings/mappings.tiny";
 	private static final String META_INF_PATH = "META-INF/MANIFEST.MF";
 	private static final String LF_INTERMEDIARY_KEY = "Intermediary-Version";
+	private static final String ORNITHE_INTERMEDIARY_KEY = "Calanus-Generation";
 
 	private static final String FIRST_1_15_SNAPSHOT = "1.15-alpha.19.34.a";
 	private static final String FIRST_OFFICIAL = "1.14-alpha.18.43.b";
@@ -55,7 +58,7 @@ public class WhichFabricVariantAmIOn implements ModInitializer {
 
 		MemoryMappingTree mappingTree = getMappingsContent();
 
-		if (isOrnithe(mappingTree)) return FabricVariants.ORNITHE_V1;
+		if (isOrnithe(mappingTree)) return differentiateOrnitheVersions();
 
 		if (VersionPredicate.parse(">=" + FIRST_OFFICIAL).test(MC_VERSION)) {
 			return FabricVariants.OFFICIAL;
@@ -66,7 +69,7 @@ public class WhichFabricVariantAmIOn implements ModInitializer {
 		}
 
 		if (VersionPredicate.parse(BABRIC).test(MC_VERSION)) {
-			return FabricVariants.BABRIC;
+			return differentiateBabricFormats(mappingTree);
 		}
 
 		return FabricVariants.UNKNOWN;
@@ -83,27 +86,32 @@ public class WhichFabricVariantAmIOn implements ModInitializer {
 		return false;
 	}
 
-	private static FabricVariants differentiateLFVersions() throws IOException {
-		String str = mappingsUrl.toString();
-		URL metaInfUrl = new URL(str.substring(0, str.length() - MAPPINGS_PATH.length()) + META_INF_PATH);
-
-		try {
-			Manifest manifest = new Manifest(metaInfUrl.openStream());
-			Attributes attributes = manifest.getMainAttributes();
-
-			if (attributes == null) return FabricVariants.LEGACY_FABRIC_V1;
-
-			String value = attributes.getValue(LF_INTERMEDIARY_KEY);
+	private static FabricVariants differentiateLFVersions() {
+		if (attributes.containsKey(LF_INTERMEDIARY_KEY)) {
+			String value = attributes.get(LF_INTERMEDIARY_KEY).toString();
 
 			if ("2".equals(value)) return FabricVariants.LEGACY_FABRIC_V2;
-		} catch (IOException ignored) {
 		}
 
 		return FabricVariants.LEGACY_FABRIC_V1;
 	}
 
+	private static FabricVariants differentiateOrnitheVersions() {
+		if (attributes.containsKey(ORNITHE_INTERMEDIARY_KEY)) {
+			String value = attributes.get(ORNITHE_INTERMEDIARY_KEY).toString();
+
+			if ("2".equals(value)) return FabricVariants.ORNITHE_V2;
+		}
+
+		return FabricVariants.ORNITHE_V1;
+	}
+
+	private static FabricVariants differentiateBabricFormats(MemoryMappingTree mappingTree) {
+		return mappingTree.getDstNamespaces().contains("glue") ? FabricVariants.BABRIC : FabricVariants.BABRIC_NEW_FORMAT;
+	}
+
 	private static MemoryMappingTree getMappingsContent() throws IOException {
-		mappingsUrl = WhichFabricVariantAmIOn.class.getClassLoader().getResource(MAPPINGS_PATH);
+		URL mappingsUrl = WhichFabricVariantAmIOn.class.getClassLoader().getResource(MAPPINGS_PATH);
 
 		URLConnection connection = mappingsUrl.openConnection();
 
@@ -127,8 +135,24 @@ public class WhichFabricVariantAmIOn implements ModInitializer {
 					throw new UnsupportedOperationException("Unsupported mapping format: " + format);
 			}
 
+			readMappingsAttributes(mappingsUrl);
+
 			return mappingTree;
 		}
+	}
+
+	private static void readMappingsAttributes(URL mappingsUrl) {
+		String str = mappingsUrl.toString();
+
+		try {
+			URL metaInfUrl = new URL(str.substring(0, str.length() - MAPPINGS_PATH.length()) + META_INF_PATH);
+			Manifest manifest = new Manifest(metaInfUrl.openStream());
+			Attributes attributesObject = manifest.getMainAttributes();
+
+			for (Map.Entry<Object, Object> entry : attributesObject.entrySet()) {
+				attributes.put(entry.getKey().toString(), entry.getValue());
+			}
+		} catch (IOException ignored) {}
 	}
 
 	@Override
