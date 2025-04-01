@@ -5,6 +5,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.Version;
 import net.fabricmc.loader.api.VersionParsingException;
 import net.fabricmc.loader.api.metadata.version.VersionPredicate;
+import net.fabricmc.loader.impl.game.minecraft.McVersion;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.format.MappingFormat;
 import net.fabricmc.mappingio.format.tiny.Tiny1FileReader;
@@ -21,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
+import java.util.stream.Collectors;
 
 public class WhichFabricVariantAmIOn implements ModInitializer {
 
@@ -37,6 +39,10 @@ public class WhichFabricVariantAmIOn implements ModInitializer {
 	private static final String FIRST_OFFICIAL = "1.14-alpha.18.43.b";
 	private static final String FIRST_MERGED = "1.3";
 	private static final String BABRIC = "1.0.0-beta.7.3";
+
+	private static final String MOD_MC_VERSION = "Fabric-Minecraft-Version";
+	private static final String MOD_CALAMUS = "Calamus-Generation";
+	private static final String MOD_LEGACY_FABRIC = "Legacy-Fabric-Intermediary-Version";
 
 	public static FabricVariants getVariant() {
 		if (VARIANT != null) return VARIANT;
@@ -158,5 +164,58 @@ public class WhichFabricVariantAmIOn implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		System.out.println("Current Fabric Variant: " + getVariant());
+	}
+
+	public static FabricVariants identifyVariantFromManifest(Map<String, Object> modAttributes) {
+        try {
+			String rawMCVersion = (String) modAttributes.get(MOD_MC_VERSION);
+
+			if (rawMCVersion == null) return FabricVariants.OFFICIAL;
+
+			String normalized = new McVersion.Builder().setId(rawMCVersion).setNameAndRelease(rawMCVersion).build().getNormalized();
+			Version version = Version.parse(normalized);
+
+			if (VersionPredicate.parse(">=" + FIRST_1_15_SNAPSHOT).test(version)) {
+				return FabricVariants.OFFICIAL;
+			}
+
+			if (modAttributes.containsKey(MOD_CALAMUS)) {
+				String calamus = (String) modAttributes.get(MOD_CALAMUS);
+
+				if (calamus.equals("1")) {
+					return FabricVariants.ORNITHE_V1;
+				} else if (calamus.equals("2")) {
+					return FabricVariants.ORNITHE_V2;
+				} else {
+					return FabricVariants.UNKNOWN;
+				}
+			}
+
+			if (VersionPredicate.parse(">=" + FIRST_OFFICIAL).test(version)) {
+				return FabricVariants.OFFICIAL;
+			}
+
+			if (modAttributes.containsKey(MOD_LEGACY_FABRIC)) {
+				String lf = (String) modAttributes.get(MOD_LEGACY_FABRIC);
+
+				if (lf.equals("1")) {
+					return FabricVariants.LEGACY_FABRIC_V1;
+				} else if (lf.equals("2")) {
+					return FabricVariants.LEGACY_FABRIC_V2;
+				} else {
+					return FabricVariants.UNKNOWN;
+				}
+			}
+
+			if (VersionPredicate.parse(">=" + FIRST_MERGED).test(version)) {
+				return FabricVariants.LEGACY_FABRIC_V1;
+			}
+
+			if (VersionPredicate.parse(BABRIC).test(version)) {
+				return FabricVariants.BABRIC_NEW_FORMAT;
+			}
+        } catch (Throwable ignored) {}
+
+        return FabricVariants.UNKNOWN;
 	}
 }
