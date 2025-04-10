@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
-import java.util.stream.Collectors;
 
 public class WhichFabricVariantAmIOn implements ModInitializer {
 
@@ -33,7 +32,7 @@ public class WhichFabricVariantAmIOn implements ModInitializer {
 	private static final String MAPPINGS_PATH = "mappings/mappings.tiny";
 	private static final String META_INF_PATH = "META-INF/MANIFEST.MF";
 	private static final String LF_INTERMEDIARY_KEY = "Intermediary-Version";
-	private static final String ORNITHE_INTERMEDIARY_KEY = "Calanus-Generation";
+	private static final String ORNITHE_INTERMEDIARY_KEY = "Calamus-Generation";
 
 	private static final String FIRST_1_15_SNAPSHOT = "1.15-alpha.19.34.a";
 	private static final String FIRST_OFFICIAL = "1.14-alpha.18.43.b";
