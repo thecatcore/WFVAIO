@@ -38,6 +38,8 @@ public class WhichFabricVariantAmIOn implements ModInitializer {
 	private static final String FIRST_OFFICIAL = "1.14-alpha.18.43.b";
 	private static final String FIRST_MERGED = "1.3";
 	private static final String BABRIC = "1.0.0-beta.7.3";
+    private static final String CLASSIC_OLD = "0.30c";
+    private static final String CLASSIC_NEW = "0.30.1-c";
 
 	private static final String MOD_MC_VERSION = "Fabric-Minecraft-Version";
 	private static final String MOD_CALAMUS = "Calamus-Generation";
@@ -61,9 +63,18 @@ public class WhichFabricVariantAmIOn implements ModInitializer {
 			return FabricVariants.OFFICIAL;
 		}
 
-		MemoryMappingTree mappingTree = getMappingsContent();
+        MemoryMappingTree mappingTree;
+        try {
+            mappingTree = getMappingsContent();
+        } catch (IOException e) {
+            if (VersionPredicate.parse(CLASSIC_OLD).test(MC_VERSION) || VersionPredicate.parse(CLASSIC_NEW).test(MC_VERSION)) {
+                return FabricVariants.ANTIQUITY_MC;
+            }
 
-		if (isOrnithe(mappingTree)) return differentiateOrnitheVersions();
+            return FabricVariants.UNKNOWN;
+        }
+
+        if (isOrnithe(mappingTree)) return differentiateOrnitheVersions();
 
 		if (VersionPredicate.parse(">=" + FIRST_OFFICIAL).test(MC_VERSION)) {
 			return FabricVariants.OFFICIAL;
@@ -213,6 +224,10 @@ public class WhichFabricVariantAmIOn implements ModInitializer {
 			if (VersionPredicate.parse(BABRIC).test(version)) {
 				return FabricVariants.BABRIC_NEW_FORMAT;
 			}
+
+            if (VersionPredicate.parse(CLASSIC_OLD).test(version) || VersionPredicate.parse(CLASSIC_NEW).test(version)) {
+                return FabricVariants.ANTIQUITY_MC;
+            }
         } catch (Throwable ignored) {}
 
         return FabricVariants.UNKNOWN;

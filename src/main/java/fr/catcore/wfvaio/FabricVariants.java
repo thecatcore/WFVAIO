@@ -8,5 +8,6 @@ public enum FabricVariants {
     BABRIC,
     ORNITHE_V1,
     ORNITHE_V2,
-    BABRIC_NEW_FORMAT
+    BABRIC_NEW_FORMAT,
+    ANTIQUITY_MC
 }
